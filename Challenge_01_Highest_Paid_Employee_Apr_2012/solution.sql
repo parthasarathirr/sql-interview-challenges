@@ -1,0 +1,79 @@
+-- Solution 1: Subquery
+
+SELECT
+    E.EMPID,
+    E.EMPNAME,
+    D.DEPTID,
+    D.DEPTNAME
+FROM
+         EMP_INFO E
+    INNER JOIN DEPT_INFO    D ON E.DEPTID = D.DEPTID
+    INNER JOIN EMP_PAY_INFO EP ON E.EMPID = EP.EMPID
+WHERE
+        EP."_MONTH" = '04'
+    AND EP."_YEAR" = 2012
+    AND EP.NETPAY = (
+        SELECT
+            MAX(NETPAY)
+        FROM
+            EMP_PAY_INFO
+        WHERE
+                "_MONTH" = '04'
+            AND "_YEAR" = 2012
+    );
+
+
+-- Solution 2: CTE
+
+
+WITH HIGHESTPAY AS (
+    SELECT
+        MAX(NETPAY) AS MAX_PAY
+    FROM
+        EMP_PAY_INFO
+    WHERE
+            "_MONTH" = '04'
+        AND "_YEAR" = 2012
+)
+SELECT
+    E.EMPID,
+    E.EMPNAME,
+    D.DEPTID,
+    D.DEPTNAME
+FROM
+         EMP_INFO E
+    INNER JOIN DEPT_INFO    D ON E.DEPTID = D.DEPTID
+    INNER JOIN EMP_PAY_INFO EP ON E.EMPID = EP.EMPID
+    JOIN HIGHESTPAY   H ON EP.NETPAY = H.MAX_PAY
+WHERE
+        EP."_MONTH" = '04'
+    AND EP."_YEAR" = 2012
+    AND EP.NETPAY = H.MAX_PAY;
+
+
+-- Solution 3: Analytic Function
+
+
+SELECT
+    EMPID,
+    EMPNAME,
+    DEPTID,
+    DEPTNAME
+FROM(
+SELECT
+    E.EMPID,
+    E.EMPNAME,
+    D.DEPTID,
+    D.DEPTNAME,
+    DENSE_RANK() OVER (
+        ORDER  BY EP.NETPAY DESC
+    )RNK
+FROM
+         EMP_INFO E
+    INNER JOIN DEPT_INFO    D ON E.DEPTID = D.DEPTID
+    INNER JOIN EMP_PAY_INFO EP ON E.EMPID = EP.EMPID
+WHERE
+        EP."_MONTH" = '04'
+    AND EP."_YEAR" = 2012
+)
+WHERE RNK = 1;
